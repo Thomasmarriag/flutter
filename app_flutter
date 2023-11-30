@@ -1,3 +1,5 @@
+main
+
 import 'package:flutter/material.dart';
 
 import 'home_page.dart';
@@ -16,4 +18,150 @@ class Tom extends StatelessWidget{
     );
   }
 
+}
+
+home page
+
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter/material.dart';
+import 'package:mi_app/model/user.dart';
+
+import 'widgets/cargapage.dart';
+import 'widgets/datospage.dart';
+import 'widgets/errorpage.dart';
+
+class Homepage extends StatelessWidget {
+  const Homepage({
+    Key? key,
+  }):super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('TOMMYS'),),
+      body: FutureBuilder(
+        builder: (context,Snapshot){
+          if(Snapshot.connectionState == ConnectionState.done){
+            if(Snapshot.hasError){
+              return Errorpage();
+            }else if (Snapshot.hasData){
+              return Datospage(users: Snapshot.data as List<User>,);
+            }
+          }
+          return Cargapage();
+        },
+        future: getList(),
+      )
+    );
+  }
+  Future<List<User>> getList() async{
+    final url = Uri.https('reqres.in','/api/users');
+    final Response = await http.get(url);
+    if(Response.statusCode == 200){
+      final info = jsonDecode(Response.body);
+      final data = info['data'];
+      return userFromJson(jsonEncode(data));
+    }else{
+      throw 'Error'; 
+    }
+  }
+}
+
+
+carga page
+
+import 'package:flutter/material.dart';
+
+class Cargapage extends StatelessWidget {
+  const Cargapage({
+    Key? key,
+  }):super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(child: CircularProgressIndicator());
+  }
+}
+
+
+Error page
+
+import 'package:flutter/material.dart';
+
+class Errorpage extends StatelessWidget {
+  const Errorpage({
+    Key? key,
+  }):super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(child: Text('ERROR'));
+  }
+}
+
+datos page
+
+import 'package:flutter/material.dart';
+import 'package:mi_app/model/user.dart';
+
+class Datospage extends StatelessWidget {
+  final List<User> users;
+
+  const Datospage({
+    Key? key,required this.users,
+  }):super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: users.length,
+      itemBuilder: (context,index){
+        final user = users[index];
+        return ListTile(
+          leading: Image.network(user.avatar),
+          trailing: const Icon(Icons.arrow_forward_ios),
+          title: Text('${user.firstName} ${user.lastName}'),
+          subtitle: Text(user.email),
+        );
+      }
+    );
+  }
+}
+
+user page
+
+import 'dart:convert';
+
+List<User> userFromJson(String str) => List<User>.from(json.decode(str).map((x) => User.fromJson(x)));
+class User {
+    int id;
+    String email;
+    String firstName;
+    String lastName;
+    String avatar;
+
+    User({
+        required this.id,
+        required this.email,
+        required this.firstName,
+        required this.lastName,
+        required this.avatar,
+    });
+
+    factory User.fromJson(Map<String, dynamic> json) => User(
+        id: json["id"],
+        email: json["email"],
+        firstName: json["first_name"],
+        lastName: json["last_name"],
+        avatar: json["avatar"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "id": id,
+        "email": email,
+        "first_name": firstName,
+        "last_name": lastName,
+        "avatar": avatar,
+    };
 }
